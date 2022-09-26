@@ -2,6 +2,7 @@ name: alfredo
 
 channels:
   - defaults
+  - conda-forge
 
 dependencies:
   # Python
