@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Environment variables
+.env
+
+# GCP Token
+gmail_token.json
+
 # C extensions
 *.so
 
