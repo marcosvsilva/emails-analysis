@@ -1,0 +1,14 @@
+name: alfredo
+
+channels:
+  - defaults
+
+dependencies:
+  # Python
+  - python=3.6
+  - pip
+
+  - simplegmail
+  - pymssql
+
+  - flask
