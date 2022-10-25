@@ -1,6 +1,4 @@
 from email.message import Message
-from operator import sub
-import os
 from unicodedata import name
 
 from api.gmail_api import (SubjectEmail, get_emails)

@@ -1,4 +1,3 @@
-from telnetlib import EC
 from process import process_history_emails
 from dotenv import load_dotenv
 import os

@@ -12,4 +12,7 @@ dependencies:
   - simplegmail
   - pymssql
 
+  - pip:
+      - python-dotenv
+
   - flask
