@@ -16,7 +16,7 @@ class Connection:
             database = os.getenv("SQL_DATABASE", "Master")
             user = os.getenv("SQL_USER", "sa")
             password = os.getenv("SQL_PASSWORD", "")
-            
+
             self._max_insert = int(os.getenv("SQL_MAX_INSERT", 50))
             self._time_sleep = int(os.getenv("SQL_FAIL_TIME_SLEEP", 50))
 
@@ -38,7 +38,7 @@ class Connection:
     def insert_information(self, informations):
         if not len(informations) > 0:
             exit
-            
+
         sql_insert = '''
         INSERT INTO EMISSAO_DFE
         (EMDF_SISTEMA, EMDF_MODELO, EMDF_DATA_EMISSAO, EMDF_NUMERO,
@@ -50,9 +50,9 @@ class Connection:
 
         list_inserts = []
         for inf in informations:
-            new_insert = [value for tag, value in dict(inf).items()]
+            new_insert = [value for tag, value in dict(inf)['description'].items()]
             list_inserts.append(tuple(new_insert))
-            
+
         self.sql_insert(sql_insert, list_inserts)
 
     def sql_query(self, sql_query, table_columns):
@@ -76,7 +76,7 @@ class Connection:
 
     def sql_update(self, sql_update, list_update):
         self.sql_execut_emany(sql_update, list_update)
-    
+
     def sql_insert(self, sql_insert, list_inserts):
         n = int(len(list_inserts) / self._max_insert) + 1
         init = 0
@@ -101,7 +101,7 @@ class Connection:
                 raise Exception('exception update sql {}, fail: {}'.format(
                     sql_script, fail), True)
 
-    
+
     def sql_execute(self, sql_script):
         try:
             cursor = self.__connection.cursor()

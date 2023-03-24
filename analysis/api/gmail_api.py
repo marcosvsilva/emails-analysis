@@ -27,6 +27,7 @@ def get_emails(subject: SubjectEmail) -> List[Message]:
     query_params = {
         "newer_than": (newer_than, newer_than_unit),
         "subject": subject.tag,
+        "unread": True,
     }
 
     if user:
@@ -37,3 +38,10 @@ def get_emails(subject: SubjectEmail) -> List[Message]:
             query=construct_query(query_params))
 
     return messages
+
+def update_email(messages: List[Message]):
+    for message in messages:
+        try:
+            message.mark_as_read()
+        except Exception as fail:
+            raise Exception('exception update mensage id: {}, fail : {}'.format(message.id, fail))
