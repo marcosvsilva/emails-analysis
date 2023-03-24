@@ -1,4 +1,4 @@
-from email.message import Message
+from simplegmail.message import Message
 from unicodedata import name
 
 from api.gmail_api import (SubjectEmail, get_emails)
@@ -8,9 +8,10 @@ def process_history_emails(subject: SubjectEmail):
     messages = get_emails(subject)
     informations = [extract_informations(mess, subject) for mess in messages]
 
-    return informations
+    return messages, informations
 
 def extract_informations(mes: Message, subject: SubjectEmail):
+    id_email = mes.id
     text = mes.html
 
     if not "Razão Social" in text:
@@ -18,7 +19,7 @@ def extract_informations(mes: Message, subject: SubjectEmail):
             "Email of %s doesn't information to extract!" % subject.system)
 
     text_split = text.split('\n')
-    
+
     line_nfe_number=2
     line_nfe_serie=3
     line_nfe_key=4
@@ -38,6 +39,10 @@ def extract_informations(mes: Message, subject: SubjectEmail):
         nfe_model = 'NFC-e'
     elif 'CT-E' in nfe_model.upper() or 'CTE' in nfe_model.upper():
         nfe_model = 'CT-e'
+    elif 'NFS-E' in nfe_model.upper() or 'NFSE' in nfe_model.upper():
+        nfe_model = 'NFS-e'
+    elif 'MDF-E' in nfe_model.upper() or 'MDFE' in nfe_model.upper():
+        nfe_model = 'MDF-e'
     else:
         nfe_model = '-'
 
@@ -65,7 +70,7 @@ def extract_informations(mes: Message, subject: SubjectEmail):
             year = '19{}'.format(year)
         else:
             year = '20{}'.format(year)
-    
+
     if int(month) >= 12:
         if int(date) <= 12:
             aux = month
@@ -73,7 +78,7 @@ def extract_informations(mes: Message, subject: SubjectEmail):
             date = aux
         else:
             month = 12
-    
+
     if int(date) > 31:
         date = 30
 
@@ -105,17 +110,19 @@ def extract_informations(mes: Message, subject: SubjectEmail):
         nfe_city = nfe_city[0:nfe_city.find('<')]
     nfe_city = nfe_city[0:60]
 
-    return {"EMDF_SISTEMA": subject.system,
-            "EMDF_MODELO": clear_information(nfe_model),
-            "EMDF_DATA_EMISSAO": clear_information(nfe_date),
-            "EMDF_NUMERO": int(nfe_number),
-            "EMDF_SERIE": clear_information(nfe_serie),
-            "EMDF_CNPJ": clear_information(nfe_id),
-            "EMDF_RAZAO_SOCIAL": clear_information(nfe_social),
-            "EMDF_FANTASIA": clear_information(nfe_name),
-            "EMDF_ENDERECO": clear_information(nfe_adress_st),
-            "EMDF_BAIRRO": clear_information(nfe_adress_n),
-            "EMDF_MUNICIPIO": clear_information(nfe_city)}
+    return {"id": id_email,
+            "description": {
+                "EMDF_SISTEMA": subject.system,
+                "EMDF_MODELO": clear_information(nfe_model),
+                "EMDF_DATA_EMISSAO": clear_information(nfe_date),
+                "EMDF_NUMERO": int(nfe_number),
+                "EMDF_SERIE": clear_information(nfe_serie),
+                "EMDF_CNPJ": clear_information(nfe_id),
+                "EMDF_RAZAO_SOCIAL": clear_information(nfe_social),
+                "EMDF_FANTASIA": clear_information(nfe_name),
+                "EMDF_ENDERECO": clear_information(nfe_adress_st),
+                "EMDF_BAIRRO": clear_information(nfe_adress_n),
+                "EMDF_MUNICIPIO": clear_information(nfe_city)}}
 
 def clear_information(information: str) -> str:
     information = information.replace('\r\n', '')
