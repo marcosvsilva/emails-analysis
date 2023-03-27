@@ -1,22 +1,29 @@
+import pandas as pd
+import numpy as np
+
 from simplegmail.message import Message
 from unicodedata import name
+from log import generate_log
 
 from api.gmail_api import (SubjectEmail, get_emails)
 
 
 def process_history_emails(subject: SubjectEmail):
+    generate_log('init request process emails')
+
     messages = get_emails(subject)
+
     informations = [extract_informations(mess, subject) for mess in messages]
 
     return messages, informations
+
 
 def extract_informations(mes: Message, subject: SubjectEmail):
     id_email = mes.id
     text = mes.html
 
     if not "Razão Social" in text:
-        raise Exception(
-            "Email of %s doesn't information to extract!" % subject.system)
+        return {}
 
     text_split = text.split('\n')
 
@@ -51,6 +58,11 @@ def extract_informations(mes: Message, subject: SubjectEmail):
 
     nfe_serie = text_split[line_nfe_serie]
     nfe_serie = nfe_serie[nfe_serie.find(': ')+2:len(nfe_serie)]
+
+    nfe_key = text_split[line_nfe_key]
+    nfe_key = nfe_key[nfe_key.find(': ')+2:len(nfe_key)]
+    if 'CTe' in nfe_key:
+        nfe_key = nfe_key.replace('CTe', '')
 
     nfe_date = text_split[line_nfe_date]
     nfe_date = nfe_date[nfe_date.find(': ')+2:len(nfe_date)]
@@ -110,6 +122,9 @@ def extract_informations(mes: Message, subject: SubjectEmail):
         nfe_city = nfe_city[0:nfe_city.find('<')]
     nfe_city = nfe_city[0:60]
 
+    generate_log('update list messages to update DB with message id: %s, from company %s and %s system.'
+                 %(id_email, clear_information(nfe_social), subject.system))
+
     return {"id": id_email,
             "description": {
                 "EMDF_SISTEMA": subject.system,
@@ -117,12 +132,14 @@ def extract_informations(mes: Message, subject: SubjectEmail):
                 "EMDF_DATA_EMISSAO": clear_information(nfe_date),
                 "EMDF_NUMERO": int(nfe_number),
                 "EMDF_SERIE": clear_information(nfe_serie),
+                "EMDF_CHAVE": clear_information(nfe_key),
                 "EMDF_CNPJ": clear_information(nfe_id),
                 "EMDF_RAZAO_SOCIAL": clear_information(nfe_social),
                 "EMDF_FANTASIA": clear_information(nfe_name),
                 "EMDF_ENDERECO": clear_information(nfe_adress_st),
                 "EMDF_BAIRRO": clear_information(nfe_adress_n),
                 "EMDF_MUNICIPIO": clear_information(nfe_city)}}
+
 
 def clear_information(information: str) -> str:
     information = information.replace('\r\n', '')
