@@ -1,5 +1,5 @@
 from process import process_history_emails
-from dotenv import load_dotenv
+from log import generate_log
 import os
 
 from api.gmail_api import SubjectEmail, update_email
@@ -15,6 +15,7 @@ from analysis import (
 
 
 def main():
+    generate_log('init system!')
     db = Connection()
 
     tag_subject_gestnfe = os.getenv("GESTNFE_EMAIL_TAG_SUBJECT", TAG_SUBJECT_GESTNFE)
@@ -30,19 +31,24 @@ def main():
     subStacCTe = SubjectEmail(tag_subject_staccte, name_system_staccte)
 
     try:
+        generate_log('init check tag %s.' %(name_system_gestnfe))
         messages, informations = process_history_emails(subGestNFe)
         db.insert_information(informations)
         update_email(messages)
 
+        generate_log('init check tag %s.' %(name_system_stacnfe))
         messages, informations = process_history_emails(subStacNFe)
         db.insert_information(informations)
         update_email(messages)
 
+        generate_log('init check tag %s.' %(name_system_staccte))
         messages, informations = process_history_emails(subStacCTe)
         db.insert_information(informations)
         update_email(messages)
-    except Exception as e:
-        print('Fail process, fail: %s' % e)
+
+        generate_log('end process!')
+    except Exception as fail:
+        generate_log('Process fail, fail: %s!' %(fail))
 
 if __name__ == "__main__":
     main()

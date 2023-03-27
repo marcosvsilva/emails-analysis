@@ -1,5 +1,5 @@
-from asyncio import new_event_loop
 from re import X
+from log import generate_log
 import pymssql
 import os
 import time
@@ -32,26 +32,31 @@ class Connection:
                                                     user=user,
                                                     password=password)
 
+            generate_log('DB %s connection successful!' %(database))
         except pymssql.Error as fail:
-            raise Exception('exception connection, fail : {}'.format(fail))
+            generate_log('exception connection, fail: %s!' %(fail))
 
     def insert_information(self, informations):
         if not len(informations) > 0:
             exit
 
+        generate_log('update DB start with messages!')
+
         sql_insert = '''
         INSERT INTO EMISSAO_DFE
         (EMDF_SISTEMA, EMDF_MODELO, EMDF_DATA_EMISSAO, EMDF_NUMERO,
-        EMDF_SERIE, EMDF_CNPJ,EMDF_RAZAO_SOCIAL, EMDF_FANTASIA, EMDF_ENDERECO,
-        EMDF_BAIRRO, EMDF_MUNICIPIO)
+        EMDF_SERIE, EMDF_CHAVE, EMDF_CNPJ, EMDF_RAZAO_SOCIAL,
+        EMDF_FANTASIA, EMDF_ENDERECO, EMDF_BAIRRO, EMDF_MUNICIPIO)
         VALUES(%s, %s, CONVERT(DATETIME, %s, 103),
-        %d, %s, %s, %s, %s, %s, %s, %s)
+        %d, %s, %s, %s, %s, %s, %s, %s, %s)
         '''
 
         list_inserts = []
         for inf in informations:
-            new_insert = [value for tag, value in dict(inf)['description'].items()]
-            list_inserts.append(tuple(new_insert))
+            if 'id' in inf:
+                generate_log('message id %s has found and put in list to update DB.' %(dict(inf)['id']))
+                new_insert = [value for tag, value in dict(inf)['description'].items()]
+                list_inserts.append(tuple(new_insert))
 
         self.sql_insert(sql_insert, list_inserts)
 
@@ -70,9 +75,10 @@ class Connection:
                 response.append(row_json)
                 row = cursor.fetchone()
 
+            generate_log('query DB execute successful! %d register has returned!' %(len(response)))
             return response
         except Exception as fail:
-            raise Exception('exception get sql, fail: {}'.format(fail))
+            generate_log('exception get sql, fail: %s!' %(fail))
 
     def sql_update(self, sql_update, list_update):
         self.sql_execut_emany(sql_update, list_update)
@@ -83,7 +89,6 @@ class Connection:
 
         for i in range(n):
             list_ins_part = list_inserts[init: init+self._max_insert]
-            print(list_ins_part)
             self.sql_execut_emany(sql_insert, list_ins_part)
 
     def sql_execut_emany(self, sql_script, list_exec, n_errors=0):
@@ -91,15 +96,15 @@ class Connection:
             cursor = self.__connection.cursor()
             cursor.executemany(sql_script, list_exec)
             self.__connection.commit()
+            generate_log('DB update successful with list messages!')
         except Exception as fail:
             if n_errors < 5:
-                print('exception insert fail: {}; Try again soon!'.format(fail))
+                generate_log('exception insert fail: %s; Try again soon!' %(fail))
                 time.sleep(self._time_sleep)
                 self.sql_execut_emany(sql_script, list_exec, n_errors+1)
             else:
                 self.__connection.rollback()
-                raise Exception('exception update sql {}, fail: {}'.format(
-                    sql_script, fail), True)
+                generate_log('exception update sql %s, fail: %s!' %(sql_script, fail))
 
 
     def sql_execute(self, sql_script):
@@ -109,5 +114,4 @@ class Connection:
             self.__connection.commit()
         except Exception as fail:
             self.__connection.rollback()
-            raise Exception('exception update sql {}, fail: {}'.format(
-                sql_script, fail), True)
+            generate_log('exception update sql %s, fail: %s!' %(sql_script, fail))
