@@ -13,16 +13,19 @@ def process_history_emails(subject: SubjectEmail):
 
     messages = get_emails(subject)
 
-    informations = [extract_informations(mess, subject) for mess in messages]
+    informations = []
+    if len(messages) > 0:
+        informations = [extract_informations(mess, subject) for mess in messages]
 
     return messages, informations
 
 
-def extract_informations(mes: Message, subject: SubjectEmail):
+def extract_informations(mes: Message, subject: SubjectEmail) -> dict:
     id_email = mes.id
     text = mes.html
 
     if not "Razão Social" in text:
+        generate_log('Email id %s is invalid! Skip!' %(id_email))
         return {}
 
     text_split = text.split('\n')
@@ -70,7 +73,8 @@ def extract_informations(mes: Message, subject: SubjectEmail):
     date_parts = nfe_date.split('/')
 
     if len(date_parts) != 3:
-        raise Exception('Date is correct invalid!')
+        generate_log('Email id %s, date parts is invalid!' %(id_email))
+        return {}
 
     date, month, year = date_parts
     if len(date) < 2:

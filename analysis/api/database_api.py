@@ -8,6 +8,7 @@ from api.gmail_api import (Message)
 
 
 class Connection:
+    connection_true = False
 
     def __init__(self):
         try:
@@ -32,6 +33,7 @@ class Connection:
                                                     user=user,
                                                     password=password)
 
+            self.connection_true = True
             generate_log('DB %s connection successful!' %(database))
         except pymssql.Error as fail:
             generate_log('exception connection, fail: %s!' %(fail))
@@ -58,7 +60,7 @@ class Connection:
                 new_insert = [value for tag, value in dict(inf)['description'].items()]
                 list_inserts.append(tuple(new_insert))
 
-        self.sql_insert(sql_insert, list_inserts)
+        return self.sql_insert(sql_insert, list_inserts)
 
     def sql_query(self, sql_query, table_columns):
         try:
@@ -89,22 +91,25 @@ class Connection:
 
         for i in range(n):
             list_ins_part = list_inserts[init: init+self._max_insert]
-            self.sql_execut_emany(sql_insert, list_ins_part)
+            return self.sql_execut_emany(sql_insert, list_ins_part)
 
     def sql_execut_emany(self, sql_script, list_exec, n_errors=0):
+        commit_sucess = False
         try:
             cursor = self.__connection.cursor()
             cursor.executemany(sql_script, list_exec)
             self.__connection.commit()
+            commit_sucess = False
             generate_log('DB update successful with list messages!')
         except Exception as fail:
             if n_errors < 5:
                 generate_log('exception insert fail: %s; Try again soon!' %(fail))
                 time.sleep(self._time_sleep)
-                self.sql_execut_emany(sql_script, list_exec, n_errors+1)
+                commit_sucess = self.sql_execut_emany(sql_script, list_exec, n_errors+1)
             else:
                 self.__connection.rollback()
                 generate_log('exception update sql %s, fail: %s!' %(sql_script, fail))
+        return commit_sucess
 
 
     def sql_execute(self, sql_script):
